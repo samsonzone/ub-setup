@@ -102,16 +102,25 @@ update_and_install_packages() {
     apt update && apt upgrade -y
     apt install -y build-essential btop curl
 
-    # Install Fastfetch
-    echo "Installing Fastfetch..."
-    fastfetch_url=$(curl -s https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep browser_download_url | grep 'ubuntu.*amd64.deb' | cut -d '"' -f 4)
-    if [[ -n "$fastfetch_url" ]]; then
-        curl -Lo fastfetch.deb "$fastfetch_url"
-        apt install -y ./fastfetch.deb && rm fastfetch.deb
-        echo "Fastfetch installed successfully."
-    else
-        echo "Failed to fetch Fastfetch release URL."
-    fi
+    # Build and install Fastfetch from source
+    echo "Installing Fastfetch from source..."
+
+    apt install -y cmake git gcc pkg-config \
+        libcjson-dev libgl1-mesa-dev libwayland-dev \
+        libx11-dev libxrandr-dev libxi-dev libxinerama-dev \
+        libxft-dev libxext-dev
+
+    git clone --depth=1 https://github.com/fastfetch-cli/fastfetch.git /tmp/fastfetch
+    cd /tmp/fastfetch
+    mkdir -p build && cd build
+    cmake ..
+    make -j"$(nproc)"
+    make install
+
+    cd ~
+    rm -rf /tmp/fastfetch
+
+    echo "Fastfetch installed successfully from source."
 
     echo "System updated and packages installed successfully."
 }
